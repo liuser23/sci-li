@@ -72,25 +72,27 @@ void placeFood(){
 }
 
 // Checks if the snake is facing a wall
-bool facingWall(byte x, byte y, byte o, int lxb, int uxb) {
+bool facingWall(byte o) {
+  int currentHeadRow = snakeCoords[0][0];
+  int currentHeadCol = snakeCoords[0][1];
   switch (o) {
     case UP:
-      if (y == 0) {
+      if (currentHeadRow == 0) {
         return true;
       }
       break;
     case DOWN:
-      if (y == SCI_LI_HEIGHT) {
+      if (currentHeadRow == SCI_LI_HEIGHT) {
         return true;
       }
       break;
     case RIGHT:
-      if (x == SCI_LI_WIDTH) {
+      if (currentHeadCol == SCI_LI_WIDTH) {
         return true;
       }
       break;
     case LEFT:
-      if (x == 0) {
+      if (currentHeadCol == 0) {
         return true;
       }
       break;
@@ -233,17 +235,17 @@ state updateFSM(state currState, long mils, int numButtons, int lastButton) {
       }
       break;
     case MOV:
-      if ((mils - savedClock >= timeStep) and !(facingWall() or isEating() or isIntoSelf())) { // NOTE FROM ALANA: idk what to pass into facingWall, transition 2-2
+      if ((mils - savedClock >= timeStep) and !(facingWall(o) or isEating(o, lastButton) or isIntoSelf(o, lastButton))) { // NOTE FROM ALANA: idk what to pass into facingWall, transition 2-2
         move(o);
         savedClock = mils;
         nextState = MOV;
       }
-      else if ((mils - savedClock >= timeStep) and isEating()) { // transition 2-3
+      else if ((mils - savedClock >= timeStep) and isEating(o, lastButton)) { // transition 2-3
         moveAndEat(o);
         savedClock = mils;
         nextState = EATING;
       }
-      else if ((mils - savedClock >= timeStep) and (facingWall() or isIntoSelf()) { // transition 2-4
+      else if ((mils - savedClock >= timeStep) and (facingWall(o) or isIntoSelf(o, lastButton)) { // transition 2-4
         gameOver();
         nextState = GAME_OVER;
       }
