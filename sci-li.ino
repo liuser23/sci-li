@@ -7,7 +7,7 @@ FASTLED_USING_NAMESPACE
 #define LED_TYPE WS2811
 #define COLOR_ORDER GRB
 
-#define BRIGHTNESS 80
+#define BRIGHTNESS 50
 #define FRAMES_PER_SECOND 80
 
 typedef enum {
@@ -15,13 +15,6 @@ typedef enum {
   sDisplayPatterns = 1,
   sDisplayGame = 2,
 } displayState;
-
-// idea taken from lab6, prob other useful structs there
-// prob will later move these into game.ino/game.h
-typedef struct {
-  uint8_t x;
-  uint8_t y;
-} xy;
 
 
 CRGB leds[5][NUM_LEDS];
@@ -46,6 +39,7 @@ void setup() {
 
 void loop() {
   static displayState currState = sDisplayGame;
+  static bool firstRun = true;
   int exampleSnakeCoords[6][2] = {
     { 0, 0 },
     { 0, 1 },
@@ -64,9 +58,12 @@ void loop() {
       randomPatternLoop(leds);
       break;
     case sDisplayGame:
-      Serial.println("Displaying Game");
-      exampleColorSnake(exampleSnakeCoords, 6);
-      FastLED.show();
+      // Serial.println("Displaying Game");
+      if (firstRun) {
+        initializeGame();
+        firstRun = false;
+      }
+      displayGame();
       break;
     default:
       Serial.println("Invalid/Unexpected State");
@@ -74,20 +71,4 @@ void loop() {
 }
 
 
-xy calculateXY(int row, int col) {
-  // max_height - row
-  uint8_t x = col;
-  uint8_t y = 14 - row;
-  return { x, y };
-}
 
-void testColorPoint(int row, int col, CRGB color) {
-  xy ledLocation = calculateXY(row, col);
-  leds[ledLocation.x][ledLocation.y] = color;
-}
-
-void exampleColorSnake(int snakeCoords[][2], size_t snakeSize) {
-  for (size_t i = 0; i < snakeSize; i++) {
-    testColorPoint(snakeCoords[i][0], snakeCoords[i][1], CRGB::White);
-  }
-}

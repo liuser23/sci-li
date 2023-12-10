@@ -1,3 +1,5 @@
+#ifndef GAME_H
+#define GAME_H
 #include <FastLED.h>
 
 
@@ -26,6 +28,25 @@ typedef enum {
   RIGHT = 3,
 } orientation;
 
+typedef enum {
+ WAIT_START = 0,
+ MOV = 1,
+ EATING = 2,
+ GAME_OVER = 3,
+} state;
+
+// idea taken from lab6, prob other useful structs there
+// prob will later move these into game.ino/game.h
+typedef struct {
+  uint8_t x;
+  uint8_t y;
+} xy;
+
 // variables for keeping track of last direction input
 orientation lastButtonPressed;
 int numButtonsPressed;
+
+void initializeGame();
+void displayGame();
+
+#endif // GAME_H
