@@ -3,7 +3,7 @@
 
 // Height & Width of Grid - 0-indexed
 #define SCI_LI_WIDTH 4
-#define SCI_LI_HEIGHT 14
+#define SCI_LI_HEIGHT 10
 
 // Cols Values Left-Right (Grid is Currently 15x5 but Some Lights Might Not Be Visible)
 #define PIN_COL0 6

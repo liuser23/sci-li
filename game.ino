@@ -48,11 +48,9 @@ void initializeMap(){
     }
   }
 
-  int snake_row = rand() % SCI_LI_HEIGHT;
-  int snake_col = rand() % SCI_LI_WIDTH;
-
   // Places the snake at a random point on the board
-  boardMap[snake_row][snake_col] = FLAG_SNAKE;
+  boardMap[5][2] = FLAG_SNAKE;
+  o = (orientation) random(0, 3);
   length = 1;
   testColorPoint(snake_row, snake_col, CRGB::White);
 
@@ -136,7 +134,6 @@ bool isEating(byte o, int lastButton) {
 
   // Check if the next head position contains food
   if (boardMap[nextHeadRow][nextHeadCol] == FLAG_FOOD) {
-
     return true;
   }
 
@@ -175,6 +172,7 @@ void move(byte o) {
   int tailRow = snakeCoords[length - 1][0];
   int tailCol = snakeCoords[length - 1][1];
   boardMap[tailRow][tailCol] = FLAG_PLAIN_CELL;
+  testColorPoint(tailRow, tailCol, CRGB::Black);
   // Update the rest of the snakeCoords array by shifting elements
   for (int i = length - 1; i > 0; i--) {
     snakeCoords[i][0] = snakeCoords[i - 1][0];
