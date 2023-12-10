@@ -13,6 +13,7 @@ void setup() {
   while (!Serial);
 
   initializeSystem();
+  initializeMap();
 
   /*
    * Initialize all FSM variables
@@ -47,6 +48,8 @@ void initializeMap(){
       boardMap[i][j] = FLAG_PLAIN_CELL;
     }
   }
+
+  score = 0;
 
   // Places the snake at a random point on the board
   boardMap[5][2] = FLAG_SNAKE;
