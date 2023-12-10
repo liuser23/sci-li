@@ -1,13 +1,12 @@
 #include "game.h"
 
 int boardMap[SCI_LI_HEIGHT][SCI_LI_WIDTH];
-int snakeCoords[0][2];
+std::deque<std::array<int, 2>> snakeDeque;
 static orientation o;
 static int timeStep, savedClock;
 static int mils;
 static int score;
 static int length;
-
 
 
 void initializeGame() {
@@ -22,6 +21,21 @@ void displayGame() {
   // Not sure what this does! Probably checks for button inputs from lab
   // updateInputs();
   CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), numButtonsPressed, lastButtonPressed);
+
+  for (int i = 0; i < SCI_LI_WIDTH; i++){
+    for (int j = 0; j < SCI_LI_HEIGHT; j++){
+      if (boardCoords[i][j] == FLAG_PLAIN_CELL) {
+        testColorPoint(i, j, CRGB: Black);
+      } else if (boardCoords[i][j] == FLAG_SNAKE) {
+        testColorPoint(i, j, CRGB: White);
+      } else if (boardCoords[i][j] == FLAG_FOOD) {
+        testColorPoint(i, j, CRGB: Green);
+      } else {
+        testColorPoint(i, j, CRGB: Black);
+      }
+    }
+  }
+
   FastLED.show();
   delay(10);
 }
@@ -31,12 +45,6 @@ xy calculateXY(int row, int col) {
   uint8_t x = col;
   uint8_t y = 14 - row;
   return { x, y };
-}
-
-void exampleColorSnake(int snakeCoords[][2], size_t snakeSize) {
-  for (size_t i = 0; i < snakeSize; i++) {
-    testColorPoint(snakeCoords[i][0], snakeCoords[i][1], CRGB::White);
-  }
 }
 
 
@@ -59,9 +67,11 @@ void initializeMap(){
 
   // Places the snake at a random point on the board
   boardMap[5][2] = FLAG_SNAKE;
+  int snakeRow = 5;
+  int snakeCol = 2;
+  snakeDeque.push_front({snakeRow, snakeCol});
   o = (orientation) random(0, 3);
   length = 1;
-  testColorPoint(5, 2, CRGB::White);
 
   placeFood();
 }
@@ -74,7 +84,6 @@ void placeFood(){
   // Checks that the snake is not in the randomly-chosen cell
   if (boardMap[food_row][food_col] == FLAG_PLAIN_CELL) {
     boardMap[food_row][food_col] = FLAG_FOOD;
-    testColorPoint(food_row, food_col, CRGB::Green);
   } else {
     placeFood(); // Recurse until we find a plain cell
   }
@@ -82,8 +91,9 @@ void placeFood(){
 
 // Checks if the snake is facing a wall
 bool facingWall(byte o) {
-  int currentHeadRow = snakeCoords[0][0];
-  int currentHeadCol = snakeCoords[0][1];
+  int currentHeadRow = snakeDeque.front()[0];
+  int currentHeadCol = snakeDeque.front()[1];
+
   switch (o) {
     case UP:
       if (currentHeadRow == 0) {
@@ -124,8 +134,8 @@ bool isIntoSelf(byte o, int lastButton) {
 
 // Need to check if moving into a food cell
 bool isEating(byte o, int lastButton) {
-  int nextHeadRow = snakeCoords[0][0];
-  int nextHeadCol = snakeCoords[0][1];
+  int nextHeadRow = snakeDeque.front()[0];
+  int nextHeadCol = snakeDeque.front()[1];
 
   // Calculate the next head position based on the current orientation
   switch (o) {
@@ -154,13 +164,8 @@ bool isEating(byte o, int lastButton) {
 
 // Called each time the snake moves
 void move(byte o) {
-  // Save the current head position
-  int currentHeadRow = snakeCoords[0][0];
-  int currentHeadCol = snakeCoords[0][1];
-  Serial.print("Current Head Row:");
-  Serial.println(currentHeadRow);
-  Serial.print("Current Head Col:");
-  Serial.println(currentHeadCol);
+  int currentHeadRow = snakeDeque.front()[0];
+  int currentHeadCol = snakeDeque.front()[1];
 
   // Update the head position based on the current orientation
   switch (o) {
@@ -178,28 +183,21 @@ void move(byte o) {
       break;
   }
 
+  snakeDeque.push_front({currentHeadRow, currentHeadCol});
   boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
-  testColorPoint(currentHeadRow, currentHeadCol, CRGB::White);
-  snakeCoords[0][0] = currentHeadRow;
-  snakeCoords[0][1] = currentHeadCol;
 
-  // Remove the tail from the boardMap and snakeCoords
-  int tailRow = snakeCoords[length - 1][0];
-  int tailCol = snakeCoords[length - 1][1];
+  // Remove the tail from the boardMap and snakeDeque
+  int tailRow = snakeDeque.back()[0];
+  int tailCol = snakeDeque.back()[1];
   boardMap[tailRow][tailCol] = FLAG_PLAIN_CELL;
-  testColorPoint(tailRow, tailCol, CRGB::Black);
-  // Update the rest of the snakeCoords array by shifting elements
-  for (int i = length - 1; i > 0; i--) {
-    snakeCoords[i][0] = snakeCoords[i - 1][0];
-    snakeCoords[i][1] = snakeCoords[i - 1][1];
-  }
+  snakeDeque.pop_back();
 }
 
 // Called when the snake is moving and eating
 void moveAndEat(byte o) {
   // Save the current head position
-  int currentHeadRow = snakeCoords[0][0];
-  int currentHeadCol = snakeCoords[0][1];
+  int currentHeadRow = snakeDeque.front()[0];
+  int currentHeadCol = snakeDeque.front()[1];
 
   // Update the head position based on the current orientation
   switch (o) {
@@ -218,9 +216,7 @@ void moveAndEat(byte o) {
   }
 
   boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
-  testColorPoint(currentHeadRow, currentHeadCol, CRGB::White);
-  snakeCoords[0][0] = currentHeadRow;
-  snakeCoords[0][1] = currentHeadCol;
+  snakeDeque.push_front({currentHeadRow, currentHeadCol});
 
   score++;
   length++;
