@@ -16,11 +16,14 @@ typedef enum {
   sDisplayGame = 2,
 } displayState;
 
+displayState currState = sDisplayGame;
 
 CRGB leds[5][NUM_LEDS];
 void setup() {
+  Serial.begin(9600);
+  while (!Serial);
+  Serial1.begin(9600);
   delay(3000);  // 3 second delay for recovery
-
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE, PIN_COL0, COLOR_ORDER>(leds[0], NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.addLeds<LED_TYPE, PIN_COL1, COLOR_ORDER>(leds[1], NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -38,16 +41,9 @@ void setup() {
 }
 
 void loop() {
-  static displayState currState = sDisplayGame;
+  // static displayState currState = sDisplayGame;
   static bool firstRun = true;
-  int exampleSnakeCoords[6][2] = {
-    { 0, 0 },
-    { 0, 1 },
-    { 0, 2 },
-    { 0, 3 },
-    { 1, 3 },
-    { 2, 3 }
-  };
+  processMessage();
   switch (currState) {
     case sOFF:
       FastLED.clear();  // turn all LEDs OFF
@@ -68,6 +64,60 @@ void loop() {
     default:
       Serial.println("Invalid/Unexpected State");
   }
+}
+
+void processMessage() {
+  if (Serial1.available() > 0) {
+    Serial1.readStringUntil('<');
+    String message = Serial1.readStringUntil('\n');
+    message.trim();
+    // String trimmedMessage = trim(message);
+    // const char* charArray = message.c_str();
+    // for (int i = 0; charArray[i] != '\0'; ++i) {
+    //   Serial.println(charArray[i]);
+    // }
+    // Serial.print("char array 0 :");
+    // Serial.println(charArray[0]);
+    // if (charArray[0] == '<') {
+    //   Serial.println(message);
+    // }
+    Serial.println(message);
+    Serial.println("SNAKE");
+    Serial.print("is equal to snake? :");
+    Serial.println(message.equalsIgnoreCase("SNAKE"));
+    if (message == "U") {
+      lastButtonPressed = UP;
+    } else if (message == "R") {
+      lastButtonPressed = RIGHT;
+    } else if (message == "D") {
+      lastButtonPressed = DOWN;
+    } else if (message == "L") {
+      lastButtonPressed = LEFT;
+    } else if (message == "SNAKE") {
+      Serial.println("changed curr state");
+      currState = sDisplayGame;
+    } else if (message == "GRAPHICS") {
+      currState = sDisplayPatterns;
+    }
+  }
+}
+
+String trim(const String& str) {
+  int startIdx = 0;
+  int endIdx = str.length() - 1;
+
+  // Find the start index of the first non-whitespace character
+  while (startIdx <= endIdx && isspace(str[startIdx])) {
+    startIdx++;
+  }
+
+  // Find the end index of the last non-whitespace character
+  while (endIdx >= startIdx && isspace(str[endIdx])) {
+    endIdx--;
+  }
+
+  // Extract the trimmed substring
+  return str.substring(startIdx, endIdx + 1);
 }
 
 

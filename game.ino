@@ -1,4 +1,6 @@
 #include "game.h"
+#include <deque>
+#include <array>
 
 int boardMap[SCI_LI_HEIGHT][SCI_LI_WIDTH];
 std::deque<std::array<int, 2>> snakeDeque;
@@ -7,6 +9,7 @@ static int timeStep, savedClock;
 static int mils;
 static int score;
 static int length;
+
 
 
 void initializeGame() {
@@ -18,21 +21,22 @@ void initializeGame() {
 
 void displayGame() {
   static state CURRENT_STATE = WAIT_START;
-  // Not sure what this does! Probably checks for button inputs from lab
+  // this has to keep track of last button pressed -- should happen in sci-li ino loop instead of an update inputs func 
   // updateInputs();
-  CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), numButtonsPressed, lastButtonPressed);
+  CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), lastButtonPressed);
 
-  for (int i = 0; i < SCI_LI_WIDTH; i++){
-    for (int j = 0; j < SCI_LI_HEIGHT; j++){
-      if (boardCoords[i][j] == FLAG_PLAIN_CELL) {
-        testColorPoint(i, j, CRGB: Black);
-      } else if (boardCoords[i][j] == FLAG_SNAKE) {
-        testColorPoint(i, j, CRGB: White);
-      } else if (boardCoords[i][j] == FLAG_FOOD) {
-        testColorPoint(i, j, CRGB: Green);
-      } else {
-        testColorPoint(i, j, CRGB: Black);
+  for (int i = 0; i < SCI_LI_HEIGHT; i++){
+    for (int j = 0; j < SCI_LI_WIDTH; j++){
+      if (boardMap[i][j] == FLAG_PLAIN_CELL) {
+        testColorPoint(i, j, CRGB:: Black);
+      } else if (boardMap[i][j] == FLAG_SNAKE) {
+        testColorPoint(i, j, CRGB:: White);
+      } else if (boardMap[i][j] == FLAG_FOOD) {
+        testColorPoint(i, j, CRGB:: Green);
+      } else if (boardMap[i][j] == FLAG_END) {
+        testColorPoint(i, j, CRGB::Red);
       }
+      // else case?
     }
   }
 
@@ -70,7 +74,8 @@ void initializeMap(){
   int snakeRow = 5;
   int snakeCol = 2;
   snakeDeque.push_front({snakeRow, snakeCol});
-  o = (orientation) random(0, 3);
+  // o = (orientation) random(0, 3);
+  o = RIGHT;
   length = 1;
 
   placeFood();
@@ -80,6 +85,8 @@ void initializeMap(){
 void placeFood(){
   int food_row = rand() % SCI_LI_HEIGHT;
   int food_col = rand() % SCI_LI_WIDTH;
+  // int food_row = 5;
+  // int food_col = 3;
 
   // Checks that the snake is not in the randomly-chosen cell
   if (boardMap[food_row][food_col] == FLAG_PLAIN_CELL) {
@@ -101,12 +108,12 @@ bool facingWall(byte o) {
       }
       break;
     case DOWN:
-      if (currentHeadRow == SCI_LI_HEIGHT) {
+      if (currentHeadRow == SCI_LI_HEIGHT - 1) {
         return true;
       }
       break;
     case RIGHT:
-      if (currentHeadCol == SCI_LI_WIDTH) {
+      if (currentHeadCol == SCI_LI_WIDTH - 1) {
         return true;
       }
       break;
@@ -120,11 +127,11 @@ bool facingWall(byte o) {
 }
 
 // Check if the input direction is > 90 degrees
-bool isIntoSelf(byte o, int lastButton) {
-  if ((o == RIGHT and lastButton == 2) or (o == LEFT and lastButton == 3)){
+bool isIntoSelf(byte o, byte lastButton) {
+  if ((o == RIGHT and lastButton == LEFT) or (o == LEFT and lastButton == RIGHT)){
     return true;
   }
-  else if ((o == UP and lastButton == 1) or (o == DOWN and lastButton == 0)){
+  else if ((o == UP and lastButton == DOWN) or (o == DOWN and lastButton == UP)){
     return true;
   }
   else {
@@ -133,7 +140,7 @@ bool isIntoSelf(byte o, int lastButton) {
 }
 
 // Need to check if moving into a food cell
-bool isEating(byte o, int lastButton) {
+bool isEating(byte o) {
   int nextHeadRow = snakeDeque.front()[0];
   int nextHeadCol = snakeDeque.front()[1];
 
@@ -152,12 +159,16 @@ bool isEating(byte o, int lastButton) {
       nextHeadCol--;
       break;
   }
+  Serial.print("Next Head Row:");
+  Serial.println(nextHeadRow);
+  Serial.print("Next Head Col:");
+  Serial.println(nextHeadCol);
 
   // Check if the next head position contains food
   if (boardMap[nextHeadRow][nextHeadCol] == FLAG_FOOD) {
+    Serial.println("is eating: true");
     return true;
   }
-
   return false;
 }
 
@@ -227,13 +238,13 @@ void moveAndEat(byte o) {
 void gameOver() {
   for (int i = 0; i < SCI_LI_HEIGHT; i++){
     for (int j = 0; j < SCI_LI_WIDTH; j++){
-      testColorPoint(i, j, CRGB::Red);
+      boardMap[i][j] = FLAG_END;
     }
   }
 }
 
 // Main logic to update FSM state
-state updateFSM(state currState, long mils, int numButtons, int lastButton) {
+state updateFSM(state currState, long mils, orientation lastButton) {
   state nextState;
   mils = millis();
   switch(currState) {
@@ -247,27 +258,53 @@ state updateFSM(state currState, long mils, int numButtons, int lastButton) {
       }
       break;
     case MOV:
-      Serial.println("In MOV");
+      // Serial.println("In MOV");
+      // check that last button is 
+      // Serial.print("o: ");
+      // printOrientation(o);
+      // Serial.println("lastButton");
+      // printOrientation(o);
       nextState = MOV;
-      if ((mils - savedClock >= timeStep) and !(facingWall(o) or isEating(o, lastButton) or isIntoSelf(o, lastButton))) { // NOTE FROM ALANA: idk what to pass into facingWall, transition 2-2
-        move(o);
-        savedClock = mils;
-        nextState = MOV;
-      }
-      else if ((mils - savedClock >= timeStep) and isEating(o, lastButton)) { // transition 2-3
-        moveAndEat(o);
-        savedClock = mils;
-        Serial.println("Transition to EATING");
-        nextState = EATING;
-      }
-      else if ((mils - savedClock >= timeStep) and (facingWall(o) or isIntoSelf(o, lastButton))) { // transition 2-4
-        gameOver();
-        nextState = GAME_OVER;
-        Serial.println("Transition to GAME_OVER");
+      if ((mils - savedClock >= timeStep)) {
+        if (!isIntoSelf(o, lastButton)) {
+          o = lastButton;
+        }
+        if (!(facingWall(o) or isEating(o))) { // transition 2-2
+          move(o);
+          savedClock = mils;
+          nextState = MOV;
+        } else if (isEating(o)) { // transition 2-3
+          moveAndEat(o);
+          savedClock = mils;
+          Serial.println("Transition to EATING");
+          nextState = EATING;
+        } else if (facingWall(o)) { // transition 2-4
+          gameOver();
+          nextState = GAME_OVER;
+          Serial.println("Transition to GAME_OVER");
+        }
       }
       break;
+      
+      // if ((mils - savedClock >= timeStep) and !(facingWall(o) or isEating(o))) { // NOTE FROM ALANA: idk what to pass into facingWall, transition 2-2
+      //   move(o);
+      //   savedClock = mils;
+      //   nextState = MOV;
+      // }
+      // else if ((mils - savedClock >= timeStep) and isEating(o)) { // transition 2-3
+        // moveAndEat(o);
+        //   savedClock = mils;
+        //   Serial.println("Transition to EATING");
+        //   nextState = EATING;
+      // }
+      // else if ((mils - savedClock >= timeStep) and (facingWall(o))) { // transition 2-4
+      //   gameOver();
+      //   nextState = GAME_OVER;
+      //   Serial.println("Transition to GAME_OVER");
+      // }
+      // break;
     case EATING:
-      Serial.println("In EATING");
+      // Serial.println("In EATING");
       nextState = EATING;
       if (mils - savedClock >= 500) { // transition 3-2
         move(o);
@@ -279,7 +316,7 @@ state updateFSM(state currState, long mils, int numButtons, int lastButton) {
       // if () { // trigger on reset button interrupt while in game_over state, transition 4-1
         // initializeMap();
       // }
-      Serial.println("In GAME_OVER");
+      // Serial.println("In GAME_OVER");
       nextState = GAME_OVER;
       break;
     default:
@@ -288,3 +325,15 @@ state updateFSM(state currState, long mils, int numButtons, int lastButton) {
   }
   return nextState;
 } 
+
+void printOrientation(orientation o) {
+  if (o == UP) {
+    Serial.println("UP");
+  } else if (o == DOWN) {
+     Serial.println("DOWN");
+  } else if (o == LEFT) {
+     Serial.println("LEFT");
+  } else if (o == RIGHT) {
+     Serial.println("RIGHT");
+  }
+}
