@@ -9,18 +9,22 @@ static int timeStep, savedClock;
 static int mils;
 static int score;
 static int length;
+static state CURRENT_STATE;
 
-
+const int resetButtonPin = 2;
 
 void initializeGame() {
+  CURRENT_STATE = WAIT_START;
   initializeMap();
   timeStep = 1000;
   mils = millis();
   savedClock = mils;
+
+  pinMode(resetButtonPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(resetButtonPin), resetButtonISR, FALLING);
 }
 
 void displayGame() {
-  static state CURRENT_STATE = WAIT_START;
   // this has to keep track of last button pressed -- should happen in sci-li ino loop instead of an update inputs func 
   // updateInputs();
   CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), lastButtonPressed);
@@ -126,8 +130,38 @@ bool facingWall(byte o) {
   return false;
 }
 
+// Checks if the snake is moving into itself
+bool isIntoSelf(byte o) {
+  int currentHeadRow = snakeDeque.front()[0];
+  int currentHeadCol = snakeDeque.front()[1];
+
+  switch (o) {
+    case UP:
+      if (boardMap[currentHeadRow - 1][currentHeadCol] == FLAG_SNAKE) {
+        return true;
+      }
+      break;
+    case DOWN:
+      if (boardMap[currentHeadRow + 1][currentHeadCol] == FLAG_SNAKE) {
+        return true;
+      }
+      break;
+    case RIGHT:
+      if (boardMap[currentHeadRow][currentHeadCol + 1] == FLAG_SNAKE) {
+        return true;
+      }
+      break;
+    case LEFT:
+      if (boardMap[currentHeadRow][currentHeadCol - 1] == FLAG_SNAKE) {
+        return true;
+      }
+      break;
+  }
+  return false;
+}
+
 // Check if the input direction is > 90 degrees
-bool isIntoSelf(byte o, byte lastButton) {
+bool invalidRotation(byte o, byte lastButton) {
   if ((o == RIGHT and lastButton == LEFT) or (o == LEFT and lastButton == RIGHT)){
     return true;
   }
@@ -226,8 +260,8 @@ void moveAndEat(byte o) {
       break;
   }
 
-  boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
   snakeDeque.push_front({currentHeadRow, currentHeadCol});
+  boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
 
   score++;
   length++;
@@ -241,6 +275,11 @@ void gameOver() {
       boardMap[i][j] = FLAG_END;
     }
   }
+}
+
+// Interrupt service routine to reset the game on button press
+void resetButtonISR() {
+  initializeGame();
 }
 
 // Main logic to update FSM state
@@ -258,18 +297,12 @@ state updateFSM(state currState, long mils, orientation lastButton) {
       }
       break;
     case MOV:
-      // Serial.println("In MOV");
-      // check that last button is 
-      // Serial.print("o: ");
-      // printOrientation(o);
-      // Serial.println("lastButton");
-      // printOrientation(o);
       nextState = MOV;
       if ((mils - savedClock >= timeStep)) {
-        if (!isIntoSelf(o, lastButton)) {
+        if (!invalidRotation(o, lastButton)) {
           o = lastButton;
         }
-        if (!(facingWall(o) or isEating(o))) { // transition 2-2
+        if (!(facingWall(o) or isEating(o) or isIntoSelf(o))) { // transition 2-2
           move(o);
           savedClock = mils;
           nextState = MOV;
@@ -278,49 +311,23 @@ state updateFSM(state currState, long mils, orientation lastButton) {
           savedClock = mils;
           Serial.println("Transition to EATING");
           nextState = EATING;
-        } else if (facingWall(o)) { // transition 2-4
+        } else if (facingWall(o) or isIntoSelf(o)) { // transition 2-4
           gameOver();
           nextState = GAME_OVER;
           Serial.println("Transition to GAME_OVER");
         }
       }
       break;
-      
-      // if ((mils - savedClock >= timeStep) and !(facingWall(o) or isEating(o))) { // NOTE FROM ALANA: idk what to pass into facingWall, transition 2-2
-      //   move(o);
-      //   savedClock = mils;
-      //   nextState = MOV;
-      // }
-      // else if ((mils - savedClock >= timeStep) and isEating(o)) { // transition 2-3
-        // moveAndEat(o);
-        //   savedClock = mils;
-        //   Serial.println("Transition to EATING");
-        //   nextState = EATING;
-      // }
-      // else if ((mils - savedClock >= timeStep) and (facingWall(o))) { // transition 2-4
-      //   gameOver();
-      //   nextState = GAME_OVER;
-      //   Serial.println("Transition to GAME_OVER");
-      // }
-      // break;
     case EATING:
-      // Serial.println("In EATING");
       nextState = EATING;
-      if (mils - savedClock >= 500) { // transition 3-2
-        move(o);
-        Serial.println("Transition to MOV");
+      if (mils - savedClock >= timeStep) { // transition 3-2
         nextState = MOV;
       }
       break;
     case GAME_OVER:
-      // if () { // trigger on reset button interrupt while in game_over state, transition 4-1
-        // initializeMap();
-      // }
-      // Serial.println("In GAME_OVER");
-      nextState = GAME_OVER;
+      nextState = GAME_OVER; // transition 4-4
       break;
     default:
-      // NOTE FROM ALANA: what do we want to do here??
       Serial.println("Invalid Case");
   }
   return nextState;
