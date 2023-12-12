@@ -15,7 +15,7 @@
 #define PIN_COL4 0
 
 
-//Bitflags to store cell data as integers
+//Bitflags to store cell data as in gers
 #define FLAG_PLAIN_CELL 0b0001
 #define FLAG_SNAKE 0b0010
 #define FLAG_FOOD 0b0100

@@ -14,7 +14,8 @@ static state CURRENT_STATE;
 const int resetButtonPin = 2;
 
 void initializeGame() {
-  // testColorPoint(SCI_LI_HEIGHT, 0, CRGB::Green);
+  FastLED.clear();
+  FastLED.show();
   CURRENT_STATE = WAIT_START;
   snakeDeque.clear();
   initializeMap();
@@ -30,7 +31,6 @@ void displayGame() {
   // this has to keep track of last button pressed -- should happen in sci-li ino loop instead of an update inputs func 
   // updateInputs();
   CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), lastButtonPressed);
-
   for (int i = 0; i < SCI_LI_HEIGHT; i++){
     for (int j = 0; j < SCI_LI_WIDTH; j++){
       if (boardMap[i][j] == FLAG_PLAIN_CELL) {
@@ -54,6 +54,9 @@ xy calculateXY(int row, int col) {
   // max_height - row
   uint8_t x = col;
   uint8_t y = SCI_LI_HEIGHT - (row + 1);
+  if (y >= 5) {
+    y++;
+  }
   return { x, y };
 }
 
@@ -270,6 +273,8 @@ void moveAndEat(byte o) {
   boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
 
   score++;
+  Serial1.print("Score: ");
+  Serial1.println(score);
   length++;
   placeFood();
 }

@@ -14,6 +14,7 @@ typedef enum {
   sOFF = 0,
   sDisplayPatterns = 1,
   sDisplayGame = 2,
+  sRestartState = 3,
 } displayState;
 
 displayState currState = sDisplayGame;
@@ -72,7 +73,7 @@ void loop() {
       firstRun = true;
       FastLED.clear();  // turn all LEDs OFF
       FastLED.show();
-      Serial.println("Off State");
+      // Serial.println("Off State");
       break;
     case sDisplayPatterns:
       firstRun = true;
@@ -86,6 +87,10 @@ void loop() {
       }
       displayGame();
       break;
+    case sRestartState:
+      firstRun = false;
+      currState = sDisplayGame;
+      break;
     default:
       Serial.println("Invalid/Unexpected State");
   }
@@ -96,23 +101,15 @@ void loop() {
 
 void processMessage() {
   if (Serial1.available() > 0) {
+    // Serial.println(Serial1.readString());
+    Serial.println("Read Message");
     Serial1.readStringUntil('<');
-    String message = Serial1.readStringUntil('\n');
+    String message = Serial1.readStringUntil('>');
     message.trim();
-    // String trimmedMessage = trim(message);
-    // const char* charArray = message.c_str();
-    // for (int i = 0; charArray[i] != '\0'; ++i) {
-    //   Serial.println(charArray[i]);
-    // }
-    // Serial.print("char array 0 :");
-    // Serial.println(charArray[0]);
-    // if (charArray[0] == '<') {
-    //   Serial.println(message);
-    // }
     Serial.println(message);
-    Serial.println("SNAKE");
-    Serial.print("is equal to snake? :");
-    Serial.println(message.equalsIgnoreCase("SNAKE"));
+    // Serial.println("SNAKE");
+    // Serial.print("is equal to snake? :");
+    // Serial.println(message.equalsIgnoreCase("SNAKE"));
     if (message == "U") {
       lastButtonPressed = UP;
     } else if (message == "R") {
@@ -121,11 +118,13 @@ void processMessage() {
       lastButtonPressed = DOWN;
     } else if (message == "L") {
       lastButtonPressed = LEFT;
-    } else if (message == "SNAKE") {
+    } else if (message == "S") {
       Serial.println("changed curr state");
       currState = sDisplayGame;
-    } else if (message == "GRAPHICS") {
+    } else if (message == "G") {
       currState = sDisplayPatterns;
+    } else if (message == "F") {
+      currState = sOFF;
     }
   }
 }
