@@ -31,7 +31,7 @@ void displayGame() {
   // updateInputs();
   CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), lastButtonPressed);
 
-  for (int i = 0; i <= SCI_LI_HEIGHT; i++){
+  for (int i = 0; i < SCI_LI_HEIGHT; i++){
     for (int j = 0; j < SCI_LI_WIDTH; j++){
       if (boardMap[i][j] == FLAG_PLAIN_CELL) {
         testColorPoint(i, j, CRGB:: Black);
@@ -53,7 +53,7 @@ void displayGame() {
 xy calculateXY(int row, int col) {
   // max_height - row
   uint8_t x = col;
-  uint8_t y = SCI_LI_HEIGHT - row;
+  uint8_t y = SCI_LI_HEIGHT - (row + 1);
   return { x, y };
 }
 
@@ -118,7 +118,7 @@ bool facingWall(byte o) {
       }
       break;
     case DOWN:
-      if (currentHeadRow == SCI_LI_HEIGHT) {
+      if (currentHeadRow == SCI_LI_HEIGHT - 1) {
         return true;
       }
       break;
@@ -276,7 +276,7 @@ void moveAndEat(byte o) {
 
 // Game over function turns the entire board red
 void gameOver() {
-  for (int i = 0; i <= SCI_LI_HEIGHT; i++){
+  for (int i = 0; i < SCI_LI_HEIGHT; i++){
     for (int j = 0; j < SCI_LI_WIDTH; j++){
       boardMap[i][j] = FLAG_END;
     }
