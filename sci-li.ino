@@ -156,5 +156,3 @@ void WDT_Handler() {
   // TODO: Warn user that a watchdog reset may happen
   // Serial.println("Watchdog timer reset may happen");
 }
-
-
