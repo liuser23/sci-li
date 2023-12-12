@@ -36,8 +36,8 @@ void setup() {
   // set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
 
-  // FastLED.clear();  // initialize in OFF state
-  // FastLED.show();
+  FastLED.clear();  // initialize in OFF state
+  FastLED.show();
   // Clear and enable WDT
   NVIC_DisableIRQ(WDT_IRQn);
   NVIC_ClearPendingIRQ(WDT_IRQn);
@@ -69,11 +69,13 @@ void loop() {
   processMessage();
   switch (currState) {
     case sOFF:
+      firstRun = true;
       FastLED.clear();  // turn all LEDs OFF
       FastLED.show();
       Serial.println("Off State");
       break;
     case sDisplayPatterns:
+      firstRun = true;
       randomPatternLoop(leds);
       break;
     case sDisplayGame:

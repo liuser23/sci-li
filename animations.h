@@ -4,7 +4,7 @@
 
 #include <FastLED.h>
 
-#define NUM_LEDS 15
+#define NUM_LEDS 11
 
 typedef void (*SimplePatternList[])(CRGB[]);
 

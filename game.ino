@@ -14,14 +14,16 @@ static state CURRENT_STATE;
 const int resetButtonPin = 2;
 
 void initializeGame() {
+  // testColorPoint(SCI_LI_HEIGHT, 0, CRGB::Green);
   CURRENT_STATE = WAIT_START;
+  snakeDeque.clear();
   initializeMap();
   timeStep = 1000;
   mils = millis();
   savedClock = mils;
-
   pinMode(resetButtonPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(resetButtonPin), resetButtonISR, FALLING);
+  
 }
 
 void displayGame() {
@@ -29,7 +31,7 @@ void displayGame() {
   // updateInputs();
   CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), lastButtonPressed);
 
-  for (int i = 0; i < SCI_LI_HEIGHT; i++){
+  for (int i = 0; i <= SCI_LI_HEIGHT; i++){
     for (int j = 0; j < SCI_LI_WIDTH; j++){
       if (boardMap[i][j] == FLAG_PLAIN_CELL) {
         testColorPoint(i, j, CRGB:: Black);
@@ -51,7 +53,7 @@ void displayGame() {
 xy calculateXY(int row, int col) {
   // max_height - row
   uint8_t x = col;
-  uint8_t y = 14 - row;
+  uint8_t y = SCI_LI_HEIGHT - row;
   return { x, y };
 }
 
@@ -91,6 +93,10 @@ void placeFood(){
   int food_col = rand() % SCI_LI_WIDTH;
   // int food_row = 5;
   // int food_col = 3;
+  Serial.print("food row:");
+  Serial.println(food_row);
+  Serial.print("food col:");
+  Serial.println(food_col);
 
   // Checks that the snake is not in the randomly-chosen cell
   if (boardMap[food_row][food_col] == FLAG_PLAIN_CELL) {
@@ -112,7 +118,7 @@ bool facingWall(byte o) {
       }
       break;
     case DOWN:
-      if (currentHeadRow == SCI_LI_HEIGHT - 1) {
+      if (currentHeadRow == SCI_LI_HEIGHT) {
         return true;
       }
       break;
@@ -193,10 +199,10 @@ bool isEating(byte o) {
       nextHeadCol--;
       break;
   }
-  Serial.print("Next Head Row:");
-  Serial.println(nextHeadRow);
-  Serial.print("Next Head Col:");
-  Serial.println(nextHeadCol);
+  // Serial.print("Next Head Row:");
+  // Serial.println(nextHeadRow);
+  // Serial.print("Next Head Col:");
+  // Serial.println(nextHeadCol);
 
   // Check if the next head position contains food
   if (boardMap[nextHeadRow][nextHeadCol] == FLAG_FOOD) {
@@ -270,7 +276,7 @@ void moveAndEat(byte o) {
 
 // Game over function turns the entire board red
 void gameOver() {
-  for (int i = 0; i < SCI_LI_HEIGHT; i++){
+  for (int i = 0; i <= SCI_LI_HEIGHT; i++){
     for (int j = 0; j < SCI_LI_WIDTH; j++){
       boardMap[i][j] = FLAG_END;
     }
@@ -320,8 +326,10 @@ state updateFSM(state currState, long mils, orientation lastButton) {
       break;
     case EATING:
       nextState = EATING;
-      if (mils - savedClock >= timeStep) { // transition 3-2
+      if (mils - savedClock >= 300) { // transition 3-2
+        savedClock = mils;
         nextState = MOV;
+        Serial.println("Transition to MOV");
       }
       break;
     case GAME_OVER:
