@@ -1,267 +1,158 @@
+#include "animations.h"
 #include "game.h"
 
-int boardMap[SCI_LI_HEIGHT][SCI_LI_WIDTH];
-int snakeCoords[][];
-static orientation o;
-static int timeStep, savedClock;
-static int mils;
-static int score;
-static int length;
+FASTLED_USING_NAMESPACE
 
+//#define CLK_PIN   4
+#define LED_TYPE WS2811
+#define COLOR_ORDER GRB
+
+#define BRIGHTNESS 50
+#define FRAMES_PER_SECOND 80
+
+typedef enum {
+  sOFF = 0,
+  sDisplayPatterns = 1,
+  sDisplayGame = 2,
+} displayState;
+
+displayState currState = sDisplayGame;
+
+CRGB leds[5][NUM_LEDS];
 void setup() {
   Serial.begin(9600);
   while (!Serial);
+  Serial1.begin(9600);
+  delay(3000);  // 3 second delay for recovery
+  // tell FastLED about the LED strip configuration
+  FastLED.addLeds<LED_TYPE, PIN_COL0, COLOR_ORDER>(leds[0], NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, PIN_COL1, COLOR_ORDER>(leds[1], NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, PIN_COL2, COLOR_ORDER>(leds[2], NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, PIN_COL3, COLOR_ORDER>(leds[3], NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE, PIN_COL4, COLOR_ORDER>(leds[4], NUM_LEDS).setCorrection(TypicalLEDStrip);
 
-  initializeSystem();
+  //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
-  /*
-   * Initialize all FSM variables
-   */
-  timeStep = 1000;
-  mils = millis();
-  savedClock = mils;
+  // set master brightness control
+  FastLED.setBrightness(BRIGHTNESS);
 
-  // display something on the LCD
-  displayLevel(level, countdown);
+  FastLED.clear();  // initialize in OFF state
+  FastLED.show();
+  // Clear and enable WDT
+  NVIC_DisableIRQ(WDT_IRQn);
+  NVIC_ClearPendingIRQ(WDT_IRQn);
+  NVIC_SetPriority(WDT_IRQn, 0);
+  NVIC_EnableIRQ(WDT_IRQn); 
+
+  // TODO: Configure and enable WDT GCLK:
+  GCLK->GENDIV.reg = GCLK_GENDIV_DIV(4) | GCLK_GENDIV_ID(5);
+  while (GCLK->STATUS.bit.SYNCBUSY);
+  // set GCLK->GENCTRL.reg and GCLK->CLKCTRL.reg;
+  GCLK->GENCTRL.reg = GCLK_GENCTRL_DIVSEL | GCLK_GENCTRL_ID(5) | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC(0x03);
+  GCLK->CLKCTRL.reg = GCLK_CLKCTRL_GEN(5) | GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_ID(0x03);
+
+  // TODO: Configure and enable WDT:
+  // use WDT->CONFIG.reg, WDT->EWCTRL.reg, WDT->CTRL.reg
+  WDT->CONFIG.reg = WDT_CONFIG_PER(9);
+  WDT->EWCTRL.reg = WDT_EWCTRL_EWOFFSET_8_Val;
+  WDT->CTRL.reg = WDT_CTRL_ENABLE;
+  while(WDT->STATUS.bit.SYNCBUSY);
+ 
+  // TODO: Enable early warning interrupts on WDT:
+  // reference WDT registers with WDT->registername.reg
+  WDT->INTENSET.reg = WDT_INTENSET_EW;
 }
 
 void loop() {
-  static state CURRENT_STATE = sDISP_COUNTDOWN;
-  updateInputs();
-  CURRENT_STATE = updateFSM(CURRENT_STATE, millis(), numButtonsPressed, lastButtonPressed);
-  delay(10);
-}
-
-
-void testColorPoint(int row, int col, CRGB color) {
-  xy ledLocation = calculateXY(row, col);
-  leds[ledLocation.x][ledLocation.y] = color;
-}
-
-// Initializes the game board, or "map"
-void initializeMap(){
-
-  // Sets all cells on the board to be plain cells
-  for (int i = 0; i < SCI_LI_HEIGHT, i++){
-    for (int j = -; j < SCI_LI_WIDTH, j++){
-      boardMap[i][j] = FLAG_PLAIN_CELL;
-    }
-  }
-
-  int snake_row = rand() % SCI_LI_HEIGHT;
-  int snake_col = rand() % SCI_LI_WIDTH;
-
-  // Places the snake at a random point on the board
-  boardMap[snake_row][snake_col] = FLAG_SNAKE;
-  length = 1;
-  testColorPoint(snake_row, snake_col, CRGB::White);
-
-  placeFood();
-}
-
-// Randomly places food on the board
-void placeFood(){
-  int food_row = rand() % SCI_LI_HEIGHT;
-  int food_col = rand() % SCI_LI_WIDTH;
-
-  // Checks that the snake is not in the randomly-chosen cell
-  if (boardMap[food_row][food_col] == FLAG_PLAIN_CELL) {
-    boardMap[food_row][food_col] = FLAG_FOOD;
-    testColorPoint(food_row, food_col, CRGB::Green);
-  } else {
-    placeFood(); // Recurse until we find a plain cell
-  }
-}
-
-// Checks if the snake is facing a wall
-bool facingWall(byte x, byte y, byte o, int lxb, int uxb) {
-  switch (o) {
-    case UP:
-      if (y == 0) {
-        return true;
+  // static displayState currState = sDisplayGame;
+  static bool firstRun = true;
+  processMessage();
+  switch (currState) {
+    case sOFF:
+      firstRun = true;
+      FastLED.clear();  // turn all LEDs OFF
+      FastLED.show();
+      Serial.println("Off State");
+      break;
+    case sDisplayPatterns:
+      firstRun = true;
+      randomPatternLoop(leds);
+      break;
+    case sDisplayGame:
+      // Serial.println("Displaying Game");
+      if (firstRun) {
+        initializeGame();
+        firstRun = false;
       }
+      displayGame();
       break;
-    case DOWN:
-      if (y == SCI_LI_HEIGHT) {
-        return true;
-      }
-      break;
-    case RIGHT:
-      if (x == SCI_LI_WIDTH) {
-        return true;
-      }
-      break;
-    case LEFT:
-      if (x == 0) {
-        return true;
-      }
-      break;
+    default:
+      Serial.println("Invalid/Unexpected State");
   }
-  return false;
+
+  // Petting the wathcdog
+  WDT->CLEAR.reg = WDT_CLEAR_CLEAR(0xA5);
 }
 
-// Check if the input direction is > 90 degrees
-bool isIntoSelf(byte o, int lastButton) {
-  if ((o == RIGHT and lastButton == 2) or o == LEFT and lastButton == 3)){
-    return true;
-  }
-  else if ((o == UP and lastButton == 1) or o == DOWN and lastButton == 0)){
-    return true;
-  }
-  else {
-    return false;
-  }
-}
-
-// Need to check if moving into a food cell
-bool isEating(byte o, int lastButton) {
-  int nextHeadRow = snakeCoords[0][0];
-  int nextHeadCol = snakeCoords[0][1];
-
-  // Calculate the next head position based on the current orientation
-  switch (o) {
-    case UP:
-      nextHeadRow--;
-      break;
-    case DOWN:
-      nextHeadRow++;
-      break;
-    case RIGHT:
-      nextHeadCol++;
-      break;
-    case LEFT:
-      nextHeadCol--;
-      break;
-  }
-
-  // Check if the next head position contains food
-  if (boardMap[nextHeadRow][nextHeadCol] == FLAG_FOOD) {
-
-    return true;
-  }
-
-  return false;
-}
-
-
-// Called each time the snake moves
-void move(byte o) {
-  // Save the current head position
-  int currentHeadRow = snakeCoords[0][0];
-  int currentHeadCol = snakeCoords[0][1];
-
-  // Update the head position based on the current orientation
-  switch (o) {
-    case UP:
-      currentHeadRow--;
-      break;
-    case DOWN:
-      currentHeadRow++;
-      break;
-    case RIGHT:
-      currentHeadCol++;
-      break;
-    case LEFT:
-      currentHeadCol--;
-      break;
-  }
-
-  boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
-  testColorPoint(currentHeadRow, currentHeadCol, CRGB::White);
-  snakeCoords[0][0] = currentHeadRow;
-  snakeCoords[0][1] = currentHeadCol;
-
-  // Remove the tail from the boardMap and snakeCoords
-  int tailRow = snakeCoords[length - 1][0];
-  int tailCol = snakeCoords[length - 1][1];
-  boardMap[tailRow][tailCol] = FLAG_PLAIN_CELL;
-  // Update the rest of the snakeCoords array by shifting elements
-  for (int i = length - 1; i > 0; i--) {
-    snakeCoords[i][0] = snakeCoords[i - 1][0];
-    snakeCoords[i][1] = snakeCoords[i - 1][1];
-  }
-}
-
-// Called when the snake is moving and eating
-void moveAndEat(byte o) {
-  // Save the current head position
-  int currentHeadRow = snakeCoords[0][0];
-  int currentHeadCol = snakeCoords[0][1];
-
-  // Update the head position based on the current orientation
-  switch (o) {
-    case UP:
-      currentHeadRow--;
-      break;
-    case DOWN:
-      currentHeadRow++;
-      break;
-    case RIGHT:
-      currentHeadCol++;
-      break;
-    case LEFT:
-      currentHeadCol--;
-      break;
-
-  boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
-  testColorPoint(currentHeadRow, currentHeadCol, CRGB::White);
-  snakeCoords[0][0] = currentHeadRow;
-  snakeCoords[0][1] = currentHeadCol;
-
-  score++;
-  length++;
-  placeFood();
-}
-
-// Game over function turns the entire board red
-void gameOver() {
-  for (int i = 0; i < SCI_LI_HEIGHT){
-    for (int j = -; j < SCI_LI_WIDTH){
-      testColorPoint(i, j, CRGB::Red);
+void processMessage() {
+  if (Serial1.available() > 0) {
+    Serial1.readStringUntil('<');
+    String message = Serial1.readStringUntil('\n');
+    message.trim();
+    // String trimmedMessage = trim(message);
+    // const char* charArray = message.c_str();
+    // for (int i = 0; charArray[i] != '\0'; ++i) {
+    //   Serial.println(charArray[i]);
+    // }
+    // Serial.print("char array 0 :");
+    // Serial.println(charArray[0]);
+    // if (charArray[0] == '<') {
+    //   Serial.println(message);
+    // }
+    Serial.println(message);
+    Serial.println("SNAKE");
+    Serial.print("is equal to snake? :");
+    Serial.println(message.equalsIgnoreCase("SNAKE"));
+    if (message == "U") {
+      lastButtonPressed = UP;
+    } else if (message == "R") {
+      lastButtonPressed = RIGHT;
+    } else if (message == "D") {
+      lastButtonPressed = DOWN;
+    } else if (message == "L") {
+      lastButtonPressed = LEFT;
+    } else if (message == "SNAKE") {
+      Serial.println("changed curr state");
+      currState = sDisplayGame;
+    } else if (message == "GRAPHICS") {
+      currState = sDisplayPatterns;
     }
   }
 }
 
-// Main logic to update FSM state
-state updateFSM(state currState, long mils, int numButtons, int lastButton) {
-  state nextState;
-  mils = millis();
-  switch(curState) {
-    case WAIT_START:
-      if (mils - savedClock >= timeStep) { // transition 1-2
-        initializeMap();
-        savedClock = mils;
-        nextState = MOV;
-      }
-      break;
-    case MOV:
-      if ((mils - savedClock >= timeStep) and !(facingWall() or isEating() or isIntoSelf())) { // NOTE FROM ALANA: idk what to pass into facingWall, transition 2-2
-        move(o);
-        savedClock = mils;
-        nextState = MOV;
-      }
-      else if ((mils - savedClock >= timeStep) and isEating()) { // transition 2-3
-        moveAndEat(o);
-        savedClock = mils;
-        nextState = EATING;
-      }
-      else if ((mils - savedClock >= timeStep) and (facingWall() or isIntoSelf()) { // transition 2-4
-        gameOver();
-        nextState = GAME_OVER;
-      }
-      break;
-    case EATING:
-      if (mils - savedClock >= 500) { // transition 3-2
-        move(o);
-        nextState = MOV;
-      }
-      break;
-    case GAME_OVER:
-      if () { // trigger on reset button interrupt while in game_over state, transition 4-1
-        initializeMap();
-      }
-      break;
-    case DEFAULT: // NOTE FROM ALANA: what do we want to do here??
-      break;
+String trim(const String& str) {
+  int startIdx = 0;
+  int endIdx = str.length() - 1;
+
+  // Find the start index of the first non-whitespace character
+  while (startIdx <= endIdx && isspace(str[startIdx])) {
+    startIdx++;
   }
-} 
+
+  // Find the end index of the last non-whitespace character
+  while (endIdx >= startIdx && isspace(str[endIdx])) {
+    endIdx--;
+  }
+
+  // Extract the trimmed substring
+  return str.substring(startIdx, endIdx + 1);
+}
+
+void WDT_Handler() {
+  // TODO: Clear interrupt register flag
+  // (reference register with WDT->registername.reg)
+  WDT->INTFLAG.reg |= WDT_INTFLAG_EW;
+  
+  // TODO: Warn user that a watchdog reset may happen
+  // Serial.println("Watchdog timer reset may happen");
+}
