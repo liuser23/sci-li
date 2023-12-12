@@ -273,8 +273,9 @@ void moveAndEat(byte o) {
   boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
 
   score++;
-  Serial1.print("Score: ");
-  Serial1.println(score);
+  Serial1.print("<S");
+  Serial1.print(score);
+  Serial1.print(">");
   length++;
   placeFood();
 }

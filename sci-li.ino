@@ -107,9 +107,6 @@ void processMessage() {
     String message = Serial1.readStringUntil('>');
     message.trim();
     Serial.println(message);
-    // Serial.println("SNAKE");
-    // Serial.print("is equal to snake? :");
-    // Serial.println(message.equalsIgnoreCase("SNAKE"));
     if (message == "U") {
       lastButtonPressed = UP;
     } else if (message == "R") {
