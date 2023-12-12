@@ -1,5 +1,7 @@
 #include "animations.h"
 #include "game.h"
+#include <Arduino.h>
+
 
 FASTLED_USING_NAMESPACE
 
@@ -14,10 +16,11 @@ typedef enum {
   sOFF = 0,
   sDisplayPatterns = 1,
   sDisplayGame = 2,
-  sRestartState = 3,
+  sDisplayRainbow = 3,
+  sDisplayConfetti = 4,
 } displayState;
 
-displayState currState = sDisplayGame;
+displayState currState = sOFF;
 
 CRGB leds[5][NUM_LEDS];
 void setup() {
@@ -67,6 +70,7 @@ void setup() {
 void loop() {
   // static displayState currState = sDisplayGame;
   static bool firstRun = true;
+
   processMessage();
   switch (currState) {
     case sOFF:
@@ -87,12 +91,14 @@ void loop() {
       }
       displayGame();
       break;
-    case sRestartState:
+    case sDisplayRainbow:
       firstRun = false;
-      currState = sDisplayGame;
-      break;
-    default:
-      Serial.println("Invalid/Unexpected State");
+      rainbowLoop(leds);
+    case sDisplayConfetti:
+      firstRun = false;
+      confettiLoop(leds);
+    // default:
+    // Serial.println("Invalid/Unexpected State");
   }
 
   // Petting the wathcdog
@@ -103,7 +109,7 @@ void processMessage() {
   if (Serial1.available() > 0) {
     // Serial.println(Serial1.readString());
     Serial.println("Read Message");
-    Serial1.readStringUntil('<');
+    String oldMessage = Serial1.readStringUntil('<');
     String message = Serial1.readStringUntil('>');
     message.trim();
     Serial.println(message);
@@ -122,8 +128,22 @@ void processMessage() {
       currState = sDisplayPatterns;
     } else if (message == "F") {
       currState = sOFF;
+    } else if (message == "RN") {
+      currState = sDisplayRainbow;
+    } else if (message == "CF") {
+      currState = sDisplayConfetti;
+    } else if (strContains(message, "CB") || strContains(oldMessage, "CB")) {
+      Serial.println("contains called");
+      Serial1.readStringUntil('\n');
+      Serial1.readStringUntil('\n');
+      Serial.print("Bytes Available After Clear:");
+      Serial.println(Serial1.available());
     }
   }
+}
+
+bool strContains(const String &haystack, const String &needle) {
+    return haystack.indexOf(needle) != -1;
 }
 
 String trim(const String& str) {

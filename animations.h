@@ -17,5 +17,7 @@ void bpm(CRGB leds[]);
 void juggle(CRGB leds[]);
 
 void randomPatternLoop(CRGB leds[][NUM_LEDS]);
+void rainbowLoop(CRGB leds[][NUM_LEDS]);
+void confettiLoop(CRGB leds[][NUM_LEDS]);
 
 #endif // ANIMATIONS_H

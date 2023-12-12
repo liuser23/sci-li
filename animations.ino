@@ -26,6 +26,25 @@ void randomPatternLoop(CRGB leds[5][NUM_LEDS]) {
   }
 }
 
+void rainbowLoop(CRGB leds[5][NUM_LEDS]) {
+  loopSpecificPattern(leds, 0);
+}
+
+void confettiLoop(CRGB leds[5][NUM_LEDS]) {
+  loopSpecificPattern(leds, 2);
+}
+
+void loopSpecificPattern(CRGB leds[5][NUM_LEDS], int index) {
+  for (int i = 0; i < 5; i++) {
+    gPatterns[index](leds[i]);
+  }
+  FastLED.show();
+  FastLED.delay(1000 / FRAMES_PER_SECOND);
+  EVERY_N_MILLISECONDS(20) {
+    gHue++;
+  }
+}
+
 void rainbow(CRGB leds[]) {
   // FastLED's built-in rainbow generator
   fill_rainbow(leds, NUM_LEDS, gHue, 7);
