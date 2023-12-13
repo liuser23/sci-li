@@ -19,7 +19,7 @@ void initializeGame() {
   CURRENT_STATE = WAIT_START;
   snakeDeque.clear();
   initializeMap();
-  timeStep = 1000;
+  timeStep = 600;
   mils = millis();
   savedClock = mils;
   pinMode(resetButtonPin, INPUT);
@@ -287,6 +287,9 @@ void gameOver() {
       boardMap[i][j] = FLAG_END;
     }
   }
+
+  Serial.print("Score: ");
+  Serial.println(score);
 }
 
 // Interrupt service routine to reset the game on button press
