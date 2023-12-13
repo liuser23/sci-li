@@ -1,7 +1,7 @@
 #include "animations.h"
 #include "game.h"
 #include <Arduino.h>
-
+#include <Adafruit_SleepyDog.h>
 
 FASTLED_USING_NAMESPACE
 
@@ -42,29 +42,14 @@ void setup() {
 
   FastLED.clear();  // initialize in OFF state
   FastLED.show();
-  // Clear and enable WDT
-  NVIC_DisableIRQ(WDT_IRQn);
-  NVIC_ClearPendingIRQ(WDT_IRQn);
-  NVIC_SetPriority(WDT_IRQn, 0);
-  NVIC_EnableIRQ(WDT_IRQn); 
 
-  // TODO: Configure and enable WDT GCLK:
-  GCLK->GENDIV.reg = GCLK_GENDIV_DIV(4) | GCLK_GENDIV_ID(5);
-  while (GCLK->STATUS.bit.SYNCBUSY);
-  // set GCLK->GENCTRL.reg and GCLK->CLKCTRL.reg;
-  GCLK->GENCTRL.reg = GCLK_GENCTRL_DIVSEL | GCLK_GENCTRL_ID(5) | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC(0x03);
-  GCLK->CLKCTRL.reg = GCLK_CLKCTRL_GEN(5) | GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_ID(0x03);
-
-  // TODO: Configure and enable WDT:
-  // use WDT->CONFIG.reg, WDT->EWCTRL.reg, WDT->CTRL.reg
-  WDT->CONFIG.reg = WDT_CONFIG_PER(9);
-  WDT->EWCTRL.reg = WDT_EWCTRL_EWOFFSET_8_Val;
-  WDT->CTRL.reg = WDT_CTRL_ENABLE;
-  while(WDT->STATUS.bit.SYNCBUSY);
- 
-  // TODO: Enable early warning interrupts on WDT:
-  // reference WDT registers with WDT->registername.reg
-  WDT->INTENSET.reg = WDT_INTENSET_EW;
+//enable the WDT
+  int countdownMS = Watchdog.enable(4000);
+  Serial.print("Enabled the watchdog with max countdown of ");
+  Serial.print(countdownMS, DEC);
+  Serial.println(" milliseconds!");
+  Serial.println();
+  
 }
 
 void loop() {
@@ -101,8 +86,11 @@ void loop() {
     // Serial.println("Invalid/Unexpected State");
   }
 
-  // Petting the wathcdog
-  WDT->CLEAR.reg = WDT_CLEAR_CLEAR(0xA5);
+  // Petting the watchdog
+  Watchdog.reset();
+  Serial.print("Watchdog has been pet!");
+  Serial.println();
+
 }
 
 void processMessage() {
@@ -164,13 +152,4 @@ String trim(const String& str) {
 
   // Extract the trimmed substring
   return str.substring(startIdx, endIdx + 1);
-}
-
-void WDT_Handler() {
-  // TODO: Clear interrupt register flag
-  // (reference register with WDT->registername.reg)
-  WDT->INTFLAG.reg |= WDT_INTFLAG_EW;
-  
-  // TODO: Warn user that a watchdog reset may happen
-  // Serial.println("Watchdog timer reset may happen");
 }
