@@ -116,7 +116,7 @@ void placeFood(){
 void placeFood(){
   int currentHeadRow = snakeDeque.front()[0];
   int currentHeadCol = snakeDeque.front()[1];  
-  boardMap[currentHeadRow][currentHeadCol + 1] = FLAG_FOOD;
+  boardMap[1][3] = FLAG_FOOD;
 
 }
 #endif
@@ -312,12 +312,17 @@ void resetButtonISR() {
 // Main logic to update FSM state
 state updateFSM(state currState, long mils, orientation lastButton) {
   state nextState;
-  mils = millis();
   switch(currState) {
     case WAIT_START:
       Serial.println("IN WAIT_START");
+      Serial.println(savedClock);
+      Serial.println(mils);
+
       nextState = WAIT_START;
       if (mils - savedClock >= timeStep) { // transition 0-1
+        Serial.println(savedClock);
+        Serial.println(mils);
+
         savedClock = mils;
         nextState = MOV;
         Serial.println("Transition to MOV");
@@ -326,6 +331,7 @@ state updateFSM(state currState, long mils, orientation lastButton) {
     case MOV:
       nextState = MOV;
       if ((mils - savedClock >= timeStep)) {
+        Serial.println(isEating(o));
         if (!invalidRotation(o, lastButton)) {
           o = lastButton;
         }

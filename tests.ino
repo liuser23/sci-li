@@ -1,4 +1,7 @@
 #include "game.h"
+#include <deque>
+#include <array>
+#include <string>
 
 typedef struct {
   orientation lastButton;
@@ -59,6 +62,20 @@ char* o2str(orientation o) {
 }
 
 
+// void dequeToString(const std::deque<std::array<int, 2>>& myDeque, char* result, size_t resultSize) {
+//     snprintf(result, resultSize, "[ ");
+
+//     for (const auto& arr : myDeque) {
+//         snprintf(result + strlen(result), resultSize - strlen(result), "[ ");
+//         for (const auto& element : arr) {
+//             snprintf(result + strlen(result), resultSize - strlen(result), "%d ", element);
+//         }
+//         snprintf(result + strlen(result), resultSize - strlen(result), "] ");
+//     }
+
+//     snprintf(result + strlen(result), resultSize - strlen(result), "]");
+// }
+
 bool testTransition(state startState,
                     state endState,
                     state_inputs testStateInputs,
@@ -118,29 +135,33 @@ std::deque<std::array<int, 2>> convertToDeque(const std::array<int, 2> arr[], st
 }
 
 
+
+
 std::array<int, 2> coordinatesArray[] = {{1, 2}};
-std::array<int, 2> coordinatesArrayUp[] = {{2, 2}};
-std::array<int, 2> coordinatesArrayAfterEat[] = {{2, 1}, {2, 2}};
+std::array<int, 2> coordinatesArrayUp[] = {{0, 2}};
+std::array<int, 2> coordinatesArrayUpAfterEat[] = {{0, 2}, {1,2}};
+std::array<int, 2> coordinatesArrayAfterEat[] = {{1, 3}, {1, 2}};
 std::array<int, 2> coordinatesArrayFacingWall[] = {{0, 0}};
 
 
 
 std::deque<std::array<int, 2>> testSnakeDeque = convertToDeque(coordinatesArray, sizeof(coordinatesArray) / sizeof(coordinatesArray[0]));
 std::deque<std::array<int, 2>> snakeDequeUp = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
+std::deque<std::array<int, 2>> snakeDequeUpAfterEat = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
 std::deque<std::array<int, 2>> snakeDequeAfterEat = convertToDeque(coordinatesArrayAfterEat, sizeof(coordinatesArrayAfterEat) / sizeof(coordinatesArrayAfterEat[0]));
 std::deque<std::array<int, 2>> snakeDequeFacingWall = convertToDeque(coordinatesArrayFacingWall, sizeof(coordinatesArrayFacingWall) / sizeof(coordinatesArrayFacingWall[0]));
 
 
 
-const state testStatesIn[9] = {(state) 0, (state) 0, (state) 1, (state) 1, (state) 1, (state) 1, (state) 2, (state) 2, (state) 3};
+const state testStatesIn[9] = { (state) 0, (state) 0, (state) 1, (state) 1, (state) 1, (state) 1, (state) 2, (state) 2, (state) 3};
 
 const state testStatesOut[9] = {(state) 0, (state) 1, (state) 1, (state) 1, (state) 2, (state) 3, (state) 1, (state) 2, (state) 3};
 
-const state_inputs testInputs[9] = {{DOWN, 500}, {DOWN, 700}, {LEFT, 500}, {UP, 1200}, {RIGHT, 600}, {LEFT, 600}, {UP, 600}, {UP, 400}, {UP, 400}};
+const state_inputs testInputs[9] = {{DOWN, 500}, {DOWN, 700}, {LEFT, 500}, {UP, 1200}, {RIGHT,900}, {LEFT, 600}, {UP, 900}, {UP, 400}, {UP, 400}};
 
-const state_vars testVarsIn[9] = {{UP, 600, 0, testSnakeDeque}, {DOWN, 600, 0, testSnakeDeque}, {LEFT, 600, 0, testSnakeDeque}, {RIGHT, 600, 0, testSnakeDeque}, {RIGHT, 600, 0, testSnakeDeque}, {LEFT, 600, 0, snakeDequeFacingWall}, {UP, 600, 300, testSnakeDeque}, {UP, 600, 300, testSnakeDeque}, {UP, 600, 300, testSnakeDeque}};
+const state_vars testVarsIn[9] = {{DOWN, 600, 0, testSnakeDeque}, {DOWN, 600, 0, testSnakeDeque}, {LEFT, 600, 0, testSnakeDeque}, {RIGHT, 600, 0, testSnakeDeque}, {RIGHT, 600, 0, testSnakeDeque}, {LEFT, 600, 0, snakeDequeFacingWall}, {UP, 600, 300, testSnakeDeque}, {UP, 600, 300, testSnakeDeque}, {UP, 600, 300, testSnakeDeque}};
 
-const state_vars testVarsOut[9] = {{UP, 600, 0, testSnakeDeque}, {DOWN, 600, 700, testSnakeDeque}, {LEFT, 600, 0, testSnakeDeque}, {UP, 600, 600, snakeDequeUp}, {RIGHT, 600, 600, snakeDequeAfterEat}, {LEFT, 600, 600, snakeDequeFacingWall}, {UP, 600, 1000, snakeDequeUp}, {UP, 600, 400, testSnakeDeque}, {UP, 600, 300, testSnakeDeque}};
+const state_vars testVarsOut[9] = {{DOWN, 600, 0, testSnakeDeque}, {DOWN, 600, 700, testSnakeDeque}, {LEFT, 600, 0, testSnakeDeque}, {UP, 600, 1200, snakeDequeUp}, {RIGHT, 600, 900, snakeDequeAfterEat}, {LEFT, 600, 0, snakeDequeFacingWall}, {UP, 600, 900, testSnakeDeque}, {UP, 600, 300, testSnakeDeque}, {UP, 600, 300, testSnakeDeque}};
 
 const int numTests = 9;
 
