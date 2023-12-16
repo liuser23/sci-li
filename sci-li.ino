@@ -49,7 +49,9 @@ void setup() {
   Serial.print(countdownMS, DEC);
   Serial.println(" milliseconds!");
   Serial.println();
-  
+
+  initializeGame();
+  testAllTests();
 }
 
 void loop() {
@@ -88,8 +90,9 @@ void loop() {
 
   // Petting the watchdog
   Watchdog.reset();
-  Serial.print("Watchdog has been pet!");
-  Serial.println();
+  // Serial.print("Watchdog has been pet!");
+  // Serial.println();
+
 
 }
 

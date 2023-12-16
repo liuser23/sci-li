@@ -2,6 +2,8 @@
 #define GAME_H
 #include <FastLED.h>
 
+#define TESTING
+
 
 // Height & Width of Grid - 0-indexed
 #define SCI_LI_WIDTH 5

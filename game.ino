@@ -89,7 +89,7 @@ void initializeMap(){
 
   placeFood();
 }
-
+#ifndef TESTING // unit testing turned off: normal behavior
 // Randomly places food on the board
 void placeFood(){
   int food_row = rand() % SCI_LI_HEIGHT;
@@ -107,7 +107,19 @@ void placeFood(){
   } else {
     placeFood(); // Recurse until we find a plain cell
   }
+#else
+/*
+ * MOCKED UP FUNCTIONS FOR TESTING
+ */
+ //places food directly to right of snake for purposes of testing transition to state 3
+
+void placeFood(){
+  int currentHeadRow = snakeDeque.front()[0];
+  int currentHeadCol = snakeDeque.front()[1];  
+  boardMap[currentHeadRow][currentHeadCol + 1] = FLAG_FOOD;
+
 }
+#endif
 
 // Checks if the snake is facing a wall
 bool facingWall(byte o) {
@@ -305,7 +317,7 @@ state updateFSM(state currState, long mils, orientation lastButton) {
     case WAIT_START:
       Serial.println("IN WAIT_START");
       nextState = WAIT_START;
-      if (mils - savedClock >= timeStep) { // transition 1-2
+      if (mils - savedClock >= timeStep) { // transition 0-1
         savedClock = mils;
         nextState = MOV;
         Serial.println("Transition to MOV");
@@ -317,16 +329,16 @@ state updateFSM(state currState, long mils, orientation lastButton) {
         if (!invalidRotation(o, lastButton)) {
           o = lastButton;
         }
-        if (!(facingWall(o) or isEating(o) or isIntoSelf(o))) { // transition 2-2
+        if (!(facingWall(o) or isEating(o) or isIntoSelf(o))) { // transition 1-1
           move(o);
           savedClock = mils;
           nextState = MOV;
-        } else if (isEating(o)) { // transition 2-3
+        } else if (isEating(o)) { // transition 1-2
           moveAndEat(o);
           savedClock = mils;
           Serial.println("Transition to EATING");
           nextState = EATING;
-        } else if (facingWall(o) or isIntoSelf(o)) { // transition 2-4
+        } else if (facingWall(o) or isIntoSelf(o)) { // transition 2-3
           gameOver();
           nextState = GAME_OVER;
           Serial.println("Transition to GAME_OVER");
@@ -335,14 +347,14 @@ state updateFSM(state currState, long mils, orientation lastButton) {
       break;
     case EATING:
       nextState = EATING;
-      if (mils - savedClock >= 300) { // transition 3-2
+      if (mils - savedClock >= 300) { // transition 2-1
         savedClock = mils;
         nextState = MOV;
         Serial.println("Transition to MOV");
       }
       break;
     case GAME_OVER:
-      nextState = GAME_OVER; // transition 4-4
+      nextState = GAME_OVER; // transition 3-3
       break;
     default:
       Serial.println("Invalid Case");
