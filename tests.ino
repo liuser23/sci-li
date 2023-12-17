@@ -227,6 +227,49 @@ void facingWallTest() {
     Serial.println(facingWall(RIGHT)); 
 }
 
+/*
+ * Unit test for move helper function 
+ */
+void moveTest() {
+    snakeDeque.clear();
+    snakeDeque.push_front({0, 3}); 
+    move(LEFT);
+
+    //the expected snake deque after moving left once
+    std::array<int, 2> coordinatesArrayLeft[] = {{0, 2}};
+    std::deque<std::array<int, 2>> snakeDequeLeft = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
+ 
+    if (snakeDeque == snakeDequeLeft){
+      Serial.print("Move test passed! The snake moved properly.");
+    }
+    else{
+      Serial.print("Move test failed. The snake did not move properly.");
+    }
+}
+
+ /*
+ * Unit test for moveAndEat helper function 
+ */
+void moveAndEatTest() {
+    snakeDeque.clear();
+    snakeDeque.push_front({0, 3}); 
+    move(LEFT);
+    int currentHeadRow = snakeDeque.front()[0];
+    int currentHeadCol = snakeDeque.front()[1];
+
+    //the expected snake deque after eating (and moving left)
+    std::array<int, 2> coordinatesArrayAfterEat[] = {{0, 2}, {0, 3}}; //after eating it should keep the tail to show the snake growing
+    std::deque<std::array<int, 2>> snakeDequeAfterEat = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
+ 
+    if (snakeDeque == snakeDequeAfterEat && boardMap[currentHeadRow][currentHeadCol] == FLAG_SNAKE && boardMap[currentHeadRow][currentHeadCol-1] == FLAG_SNAKE ){ //snake grows so head and tail are still flagged as snake cells
+      Serial.print("Move and eat test passed! The snake moved and grew properly after eating.");
+    }
+    else{
+      Serial.print("Move and eat test failed. The snake did not move and eat properly.");
+    }
+}
+
+
  
 bool testAllTestsFSM() {
   for (int i = 0; i < numTests; i++) {
@@ -244,7 +287,9 @@ bool testAllTestsFSM() {
 void runAllHelperFunctionTests(){
   facingWallTest();
   isIntoSelfTest();
-  invalidRotationTest();
+  invalidRotationTests();
   isEatingTests();
+  moveTest();
+  moveAndEatTest();
 }
 
