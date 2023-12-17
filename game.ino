@@ -181,6 +181,8 @@ bool isIntoSelf(byte o) {
   return false;
 }
 
+
+
 // Check if the input direction is > 90 degrees
 bool invalidRotation(byte o, byte lastButton) {
   if ((o == RIGHT and lastButton == LEFT) or (o == LEFT and lastButton == RIGHT)){

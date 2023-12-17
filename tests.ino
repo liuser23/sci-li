@@ -62,20 +62,6 @@ char* o2str(orientation o) {
 }
 
 
-// void dequeToString(const std::deque<std::array<int, 2>>& myDeque, char* result, size_t resultSize) {
-//     snprintf(result, resultSize, "[ ");
-
-//     for (const auto& arr : myDeque) {
-//         snprintf(result + strlen(result), resultSize - strlen(result), "[ ");
-//         for (const auto& element : arr) {
-//             snprintf(result + strlen(result), resultSize - strlen(result), "%d ", element);
-//         }
-//         snprintf(result + strlen(result), resultSize - strlen(result), "] ");
-//     }
-
-//     snprintf(result + strlen(result), resultSize - strlen(result), "]");
-// }
-
 bool testTransition(state startState,
                     state endState,
                     state_inputs testStateInputs,
@@ -136,13 +122,12 @@ std::deque<std::array<int, 2>> convertToDeque(const std::array<int, 2> arr[], st
 
 
 
-
+//different sets of snake coordinates to test correct movement, growing after eating, and running into a wall 
 std::array<int, 2> coordinatesArray[] = {{1, 2}};
 std::array<int, 2> coordinatesArrayUp[] = {{0, 2}};
 std::array<int, 2> coordinatesArrayUpAfterEat[] = {{0, 2}, {1,2}};
 std::array<int, 2> coordinatesArrayAfterEat[] = {{1, 3}, {1, 2}};
 std::array<int, 2> coordinatesArrayFacingWall[] = {{0, 0}};
-
 
 
 std::deque<std::array<int, 2>> testSnakeDeque = convertToDeque(coordinatesArray, sizeof(coordinatesArray) / sizeof(coordinatesArray[0]));
@@ -165,10 +150,85 @@ const state_vars testVarsOut[9] = {{DOWN, 600, 0, testSnakeDeque}, {DOWN, 600, 7
 
 const int numTests = 9;
 
+/*
+ * Unit test for isEating helper function 
+ */
+void isEatingTests() {
+    // Scenario 1: Snake is about to eat (next head position has food)
+    snakeDeque.clear();  // Clear the deque
+    snakeDeque.push_front({1, 1});  // Set the current head position
+    boardMap[0][1] = FLAG_FOOD;     // Set food at the next head position
+    Serial.println("Scenario 1:");
+    Serial.print("Expected: true | Actual: ");
+    Serial.println(isEating(UP));  // Snake is about to eat
 
+    // Scenario 2: Snake is not about to eat (next head position doesn't have food)
+    snakeDeque.clear();  // Clear the deque
+    snakeDeque.push_front({2, 2});  // Set the current head position
+    boardMap[1][2] = FLAG_PLAIN_CELL;  // No food at the next head position
+    Serial.println("Scenario 2:");
+    Serial.print("Expected: false | Actual: ");
+    Serial.println(isEating(DOWN));  // Snake is not about to eat
+}
+
+/*
+ * Unit test for invalidRotation helper function 
+ */
+void invalidRotationTests() {
+    // Scenario 1: Invalid rotation (180 degrees)
+    Serial.println("Scenario 1:");
+    Serial.print("Expected: true | Actual: ");
+    Serial.println(invalidRotation(UP, DOWN));  // Invalid rotation
+
+    // Scenario 2: Valid rotation (not 180 degrees)
+    Serial.println("Scenario 2:");
+    Serial.print("Expected: false | Actual: ");
+    Serial.println(invalidRotation(UP, RIGHT));  // Valid rotation
+}
+
+/*
+ * Unit test for isIntoSelf helper function 
+ */
+void isIntoSelfTest() {
+    snakeDeque.clear();
+    //snake of size 4 that could run into itself
+    snakeDeque.push_front({2, 2});  
+    snakeDeque.push_front({2, 3}); 
+    snakeDeque.push_front({3, 3}); 
+    snakeDeque.push_front({3, 2}); 
+
+    // Set up the board scenario
+    boardMap[2][2] = FLAG_SNAKE;  
+
+    // Scenario 1: Move the snake into itself
+    Serial.println("Scenario 1:");
+    Serial.print("Expected: True | Actual: ");
+
+    // Scenario 1: Snake does not move into intself
+    Serial.println("Scenario 1:");
+    Serial.print("Expected: False | Actual: ");
+}
+
+/*
+ * Unit test for isIntoSelf helper function 
+ */
+void facingWallTest() {
+    snakeDeque.clear();
+    snakeDeque.push_front({0, 3});  
+
+    // Scenario 1: Snake is facing a wall (UP)
+    Serial.println("Scenario 1:");
+    Serial.print("Expected: True | Actual: ");
+    Serial.println(facingWall(UP)); 
+
+    // Scenario 2: Snake is not facing a wall (RIGHT)
+    Serial.println("Scenario 2:");
+    Serial.print("Expected: False | Actual: ");
+    Serial.println(facingWall(RIGHT)); 
+}
 
  
-bool testAllTests() {
+bool testAllTestsFSM() {
   for (int i = 0; i < numTests; i++) {
     Serial.print("Running test ");
     Serial.println(i);
@@ -177,7 +237,14 @@ bool testAllTests() {
     }
     Serial.println();
   }
-  Serial.println("All tests passed!");
+  Serial.println("All FSM tests passed!");
   return true;
+}
+
+void runAllHelperFunctionTests(){
+  facingWallTest();
+  isIntoSelfTest();
+  invalidRotationTest();
+  isEatingTests();
 }
 

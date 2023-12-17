@@ -51,7 +51,8 @@ void setup() {
   Serial.println();
 
   initializeGame();
-  testAllTests();
+  testAllTestsFSM();
+  runAllHelperFunctionTests();
 }
 
 void loop() {
