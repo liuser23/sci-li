@@ -23,6 +23,7 @@ typedef enum {
 displayState currState = sOFF;
 
 CRGB leds[5][NUM_LEDS];
+
 void setup() {
   Serial.begin(9600);
   while (!Serial);
@@ -130,8 +131,8 @@ void processMessage() {
       Serial1.readStringUntil('\n');
       Serial.print("Bytes Available After Clear:");
       Serial.println(Serial1.available());
-    // // } else if (message == "WDT") {
-    // //   delay(7000);
+    } else if (message == "WDT") {
+      delay(7000);
     }
   }
 }

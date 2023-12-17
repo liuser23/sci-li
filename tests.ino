@@ -137,7 +137,18 @@ std::deque<std::array<int, 2>> snakeDequeAfterEat = convertToDeque(coordinatesAr
 std::deque<std::array<int, 2>> snakeDequeFacingWall = convertToDeque(coordinatesArrayFacingWall, sizeof(coordinatesArrayFacingWall) / sizeof(coordinatesArrayFacingWall[0]));
 
 
-
+/*
+*Test all the state transitions: 
+*0-0: (WAIT_START- WAIT-START) milis - savedClock < timeStep so the transition to state 1 is not taken
+*0-1: (WAIT_START to MOV) the transition is taken because enough time has passed
+*1-1 (MOV to MOV) milis - savedClock < timeStep so still in same state/ no transition
+*1-1 (MOV to MOV) snake does not run into itself, food, or wall so it continues to be in MOV step
+*1-2 (MOV to EAT) snake moves into a cell with FLAG_FOOD so the snake should grow by not clearing the tail cell
+*1-3 (MOV to GAME_OVER) snake moves into a wall so enters GAME_OVER state
+*2-1 (EAT to MOV) snake will continue moving after 300 ms delay in the eat step
+*2-2 (EAT to EAT) not enough time has passed so still in EAT step
+*3-3 (GAME_OVER to GAME_OVER) game has not been reset- still in GAME_OVER state
+*/
 const state testStatesIn[9] = { (state) 0, (state) 0, (state) 1, (state) 1, (state) 1, (state) 1, (state) 2, (state) 2, (state) 3};
 
 const state testStatesOut[9] = {(state) 0, (state) 1, (state) 1, (state) 1, (state) 2, (state) 3, (state) 1, (state) 2, (state) 3};
