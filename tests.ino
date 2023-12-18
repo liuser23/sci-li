@@ -289,10 +289,10 @@ void moveAndEatTest() {
     std::deque<std::array<int, 2>> snakeDequeAfterEat = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
  
     if (snakeDeque == snakeDequeAfterEat && boardMap[currentHeadRow][currentHeadCol] == FLAG_SNAKE && boardMap[currentHeadRow][currentHeadCol-1] == FLAG_SNAKE ){ //snake grows so head and tail are still flagged as snake cells
-      Serial.print("Move and eat test passed! The snake moved and grew properly after eating.");
+      Serial.println("Move and eat test passed! The snake moved and grew properly after eating.");
     }
     else{
-      Serial.print("Move and eat test failed. The snake did not move and eat properly.");
+      Serial.println("Move and eat test failed. The snake did not move and eat properly.");
     }
 
     Serial.println("----------------");
