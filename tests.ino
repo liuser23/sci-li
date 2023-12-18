@@ -207,7 +207,6 @@ void invalidRotationTests() {
  * Unit test for isIntoSelf helper function 
  */
 void isIntoSelfTest() {
-    Serial.println("isIntoSelfTest");
     snakeDeque.clear();
     //snake of size 4 that could run into itself
     snakeDeque.push_front({2, 2});  
@@ -216,21 +215,27 @@ void isIntoSelfTest() {
     snakeDeque.push_front({3, 2}); 
 
     // Set up the board scenario
-    boardMap[2][2] = FLAG_SNAKE;  
+    boardMap[2][2] = FLAG_SNAKE; 
+    boardMap[2][3] = FLAG_SNAKE;  
+    boardMap[3][2] = FLAG_SNAKE;  
+    boardMap[3][3] = FLAG_SNAKE;  
+
 
     // Scenario 1: Move the snake into itself
     Serial.println("Scenario 1:");
     Serial.print("Expected: 1 | Actual: ");
+    Serial.println(isIntoSelf(UP));
 
     // Scenario 1: Snake does not move into intself
     Serial.println("Scenario 1:");
     Serial.print("Expected: 0 | Actual: ");
+    Serial.println(isIntoSelf(DOWN));
 
     Serial.println("----------------");
 }
 
 /*
- * Unit test for isIntoSelf helper function 
+ * Unit test for facingWallTest helper function 
  */
 void facingWallTest() {
     Serial.println("facingWallTest");
@@ -257,19 +262,22 @@ void moveTest() {
     Serial.println("moveTest");
     snakeDeque.clear();
     snakeDeque.push_front({0, 3}); 
+
     move(LEFT);
+    int currentHeadRow = snakeDeque.front()[0];
+    int currentHeadCol = snakeDeque.front()[1];
+    
 
     //the expected snake deque after moving left once
     std::array<int, 2> coordinatesArrayLeft[] = {{0, 2}};
-    std::deque<std::array<int, 2>> snakeDequeLeft = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
+    std::deque<std::array<int, 2>> snakeDequeLeft = convertToDeque(coordinatesArrayLeft, sizeof(coordinatesArrayLeft) / sizeof(coordinatesArrayLeft[0]));
  
-    if (snakeDeque == snakeDequeLeft){
+    if (snakeDeque == snakeDequeLeft && boardMap[currentHeadRow][currentHeadCol] == FLAG_SNAKE){
       Serial.println("Move test passed! The snake moved properly.");
     }
     else{
       Serial.println("Move test failed. The snake did not move properly.");
     }
-
     Serial.println("----------------");
 }
 
@@ -279,16 +287,20 @@ void moveTest() {
 void moveAndEatTest() {
     Serial.println("moveAndEatTest");
     snakeDeque.clear();
-    snakeDeque.push_front({0, 3}); 
-    move(LEFT);
+    snakeDeque.push_front({0, 3});
     int currentHeadRow = snakeDeque.front()[0];
     int currentHeadCol = snakeDeque.front()[1];
+    boardMap[currentHeadRow][currentHeadCol] = FLAG_SNAKE;
 
+    moveAndEat(LEFT);
+    currentHeadRow = snakeDeque.front()[0];
+    currentHeadCol = snakeDeque.front()[1];
+  
     //the expected snake deque after eating (and moving left)
     std::array<int, 2> coordinatesArrayAfterEat[] = {{0, 2}, {0, 3}}; //after eating it should keep the tail to show the snake growing
-    std::deque<std::array<int, 2>> snakeDequeAfterEat = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
- 
-    if (snakeDeque == snakeDequeAfterEat && boardMap[currentHeadRow][currentHeadCol] == FLAG_SNAKE && boardMap[currentHeadRow][currentHeadCol-1] == FLAG_SNAKE ){ //snake grows so head and tail are still flagged as snake cells
+    std::deque<std::array<int, 2>> snakeDequeAfterEat = convertToDeque(coordinatesArrayAfterEat, sizeof(coordinatesArrayAfterEat) / sizeof(coordinatesArrayAfterEat[0]));    
+
+    if (snakeDeque == snakeDequeAfterEat && boardMap[currentHeadRow][currentHeadCol] == FLAG_SNAKE && boardMap[currentHeadRow][currentHeadCol+1] == FLAG_SNAKE){ //snake grows so head and tail are still flagged as snake cells
       Serial.println("Move and eat test passed! The snake moved and grew properly after eating.");
     }
     else{

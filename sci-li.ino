@@ -105,7 +105,7 @@ void loop() {
 void processMessage() {
   if (Serial1.available() > 0) {
     // Serial.println(Serial1.readString());
-    Serial.println("Read Message");
+    //Serial.println("Read Message");
     String oldMessage = Serial1.readStringUntil('<');
     String message = Serial1.readStringUntil('>');
     message.trim();
