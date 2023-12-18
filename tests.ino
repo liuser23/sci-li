@@ -165,42 +165,49 @@ const int numTests = 9;
  * Unit test for isEating helper function 
  */
 void isEatingTests() {
+    Serial.println("isEatingTests");
     // Scenario 1: Snake is about to eat (next head position has food)
     snakeDeque.clear();  // Clear the deque
     snakeDeque.push_front({1, 1});  // Set the current head position
     boardMap[0][1] = FLAG_FOOD;     // Set food at the next head position
     Serial.println("Scenario 1:");
-    Serial.print("Expected: true | Actual: ");
-    Serial.println(isEating(UP));  // Snake is about to eat
+    Serial.print("Expected: 1 | Actual: ");
+    Serial.println((bool)  isEating(UP));  // Snake is about to eat
 
     // Scenario 2: Snake is not about to eat (next head position doesn't have food)
     snakeDeque.clear();  // Clear the deque
     snakeDeque.push_front({2, 2});  // Set the current head position
     boardMap[1][2] = FLAG_PLAIN_CELL;  // No food at the next head position
     Serial.println("Scenario 2:");
-    Serial.print("Expected: false | Actual: ");
-    Serial.println(isEating(DOWN));  // Snake is not about to eat
+    Serial.print("Expected: 0 | Actual: ");
+    Serial.println((bool) isEating(DOWN));  // Snake is not about to eat
+
+    Serial.println("----------------");
 }
 
 /*
  * Unit test for invalidRotation helper function 
  */
 void invalidRotationTests() {
+    Serial.println("invalidRotationTests");
     // Scenario 1: Invalid rotation (180 degrees)
     Serial.println("Scenario 1:");
-    Serial.print("Expected: true | Actual: ");
+    Serial.print("Expected: 1 | Actual: ");
     Serial.println(invalidRotation(UP, DOWN));  // Invalid rotation
 
     // Scenario 2: Valid rotation (not 180 degrees)
     Serial.println("Scenario 2:");
-    Serial.print("Expected: false | Actual: ");
+    Serial.print("Expected: 0 | Actual: ");
     Serial.println(invalidRotation(UP, RIGHT));  // Valid rotation
+
+    Serial.println("----------------");
 }
 
 /*
  * Unit test for isIntoSelf helper function 
  */
 void isIntoSelfTest() {
+    Serial.println("isIntoSelfTest");
     snakeDeque.clear();
     //snake of size 4 that could run into itself
     snakeDeque.push_front({2, 2});  
@@ -213,35 +220,41 @@ void isIntoSelfTest() {
 
     // Scenario 1: Move the snake into itself
     Serial.println("Scenario 1:");
-    Serial.print("Expected: True | Actual: ");
+    Serial.print("Expected: 1 | Actual: ");
 
     // Scenario 1: Snake does not move into intself
     Serial.println("Scenario 1:");
-    Serial.print("Expected: False | Actual: ");
+    Serial.print("Expected: 0 | Actual: ");
+
+    Serial.println("----------------");
 }
 
 /*
  * Unit test for isIntoSelf helper function 
  */
 void facingWallTest() {
+    Serial.println("facingWallTest");
     snakeDeque.clear();
     snakeDeque.push_front({0, 3});  
 
     // Scenario 1: Snake is facing a wall (UP)
     Serial.println("Scenario 1:");
-    Serial.print("Expected: True | Actual: ");
+    Serial.print("Expected: 1 | Actual: ");
     Serial.println(facingWall(UP)); 
 
     // Scenario 2: Snake is not facing a wall (RIGHT)
     Serial.println("Scenario 2:");
-    Serial.print("Expected: False | Actual: ");
+    Serial.print("Expected: 0 | Actual: ");
     Serial.println(facingWall(RIGHT)); 
+
+    Serial.println("----------------");
 }
 
 /*
  * Unit test for move helper function 
  */
 void moveTest() {
+    Serial.println("moveTest");
     snakeDeque.clear();
     snakeDeque.push_front({0, 3}); 
     move(LEFT);
@@ -251,17 +264,20 @@ void moveTest() {
     std::deque<std::array<int, 2>> snakeDequeLeft = convertToDeque(coordinatesArrayUp, sizeof(coordinatesArrayUp) / sizeof(coordinatesArrayUp[0]));
  
     if (snakeDeque == snakeDequeLeft){
-      Serial.print("Move test passed! The snake moved properly.");
+      Serial.println("Move test passed! The snake moved properly.");
     }
     else{
-      Serial.print("Move test failed. The snake did not move properly.");
+      Serial.println("Move test failed. The snake did not move properly.");
     }
+
+    Serial.println("----------------");
 }
 
  /*
  * Unit test for moveAndEat helper function 
  */
 void moveAndEatTest() {
+    Serial.println("moveAndEatTest");
     snakeDeque.clear();
     snakeDeque.push_front({0, 3}); 
     move(LEFT);
@@ -278,6 +294,8 @@ void moveAndEatTest() {
     else{
       Serial.print("Move and eat test failed. The snake did not move and eat properly.");
     }
+
+    Serial.println("----------------");
 }
 
 

@@ -51,8 +51,12 @@ void setup() {
   Serial.println(" milliseconds!");
   Serial.println();
 
+  Serial.println("ABOUT TO START TESTING");
+  delay(3000);
   initializeGame();
   testAllTestsFSM();
+  Serial.println("");
+  Serial.println("Helper Function Tests: ");
   runAllHelperFunctionTests();
 }
 

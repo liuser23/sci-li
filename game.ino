@@ -223,7 +223,7 @@ bool isEating(byte o) {
 
   // Check if the next head position contains food
   if (boardMap[nextHeadRow][nextHeadCol] == FLAG_FOOD) {
-    Serial.println("is eating: true");
+    //Serial.println("is eating: true");
     return true;
   }
   return false;
@@ -302,8 +302,8 @@ void gameOver() {
     }
   }
 
-  Serial.print("Score: ");
-  Serial.println(score);
+  //Serial.print("Score: ");
+  //Serial.println(score);
 }
 
 // Interrupt service routine to reset the game on button press
@@ -316,24 +316,24 @@ state updateFSM(state currState, long mils, orientation lastButton) {
   state nextState;
   switch(currState) {
     case WAIT_START:
-      Serial.println("IN WAIT_START");
-      Serial.println(savedClock);
-      Serial.println(mils);
+      //Serial.println("IN WAIT_START");
+      //Serial.println(savedClock);
+      //Serial.println(mils);
 
       nextState = WAIT_START;
       if (mils - savedClock >= timeStep) { // transition 0-1
-        Serial.println(savedClock);
-        Serial.println(mils);
+        //Serial.println(savedClock);
+        //Serial.println(mils);
 
         savedClock = mils;
         nextState = MOV;
-        Serial.println("Transition to MOV");
+        //Serial.println("Transition to MOV");
       }
       break;
     case MOV:
       nextState = MOV;
       if ((mils - savedClock >= timeStep)) {
-        Serial.println(isEating(o));
+        // Serial.println(isEating(o));
         if (!invalidRotation(o, lastButton)) {
           o = lastButton;
         }
@@ -344,12 +344,12 @@ state updateFSM(state currState, long mils, orientation lastButton) {
         } else if (isEating(o)) { // transition 1-2
           moveAndEat(o);
           savedClock = mils;
-          Serial.println("Transition to EATING");
+          //Serial.println("Transition to EATING");
           nextState = EATING;
         } else if (facingWall(o) or isIntoSelf(o)) { // transition 2-3
           gameOver();
           nextState = GAME_OVER;
-          Serial.println("Transition to GAME_OVER");
+          //Serial.println("Transition to GAME_OVER");
         }
       }
       break;
@@ -358,7 +358,7 @@ state updateFSM(state currState, long mils, orientation lastButton) {
       if (mils - savedClock >= 300) { // transition 2-1
         savedClock = mils;
         nextState = MOV;
-        Serial.println("Transition to MOV");
+        //Serial.println("Transition to MOV");
       }
       break;
     case GAME_OVER:
